@@ -198,11 +198,17 @@ class hackTickets(object):
         count=0
         while self.driver.url == self.ticket_url:
             # 勾选车次类型，发车时间
-            self.searchMore();
-            sleep(0.05)
-            self.driver.find_by_text(u"查询").click()
-            count += 1
-            print(u"循环点击查询... 第 %s 次" % count)
+            if count == 0:
+                self.searchMore();
+            sleep(0.2)
+            try:
+                self.driver.find_by_text(u"查询").click()
+                count += 1
+                print(u"循环点击查询... 第 %s 次" % count) 
+            except Exception as ee:
+                print(e)
+                print(u"点击查询出错")
+                continue
 
             try:
                 self.driver.find_by_text(u"预订")[self.order - 1].click()
@@ -216,8 +222,9 @@ class hackTickets(object):
         count=0
         while self.driver.url == self.ticket_url:
             # 勾选车次类型，发车时间
-            self.searchMore();
-            sleep(0.05)
+            if count == 0:
+                self.searchMore();
+            sleep(0.2)
             self.driver.find_by_text(u"查询").click()
             count += 1
             print(u"循环点击查询... 第 %s 次" % count)
@@ -259,11 +266,15 @@ class hackTickets(object):
         else:
             if self.noseat_allow == 0:
                 self.driver.find_by_id('back_edit_id').click()
+                # 没有想要的席位，再次进入刷票页面
+                self.reStart()
             elif self.noseat_allow == 1:
                 self.driver.find_by_id('qr_submit_id').click()
+                # 抢票成功，发送邮件提示
+                print(u"抢票成功，发送邮件...")
 
     def buyTickets(self):
-        t = time.clock()
+        t = time.process_time()
         try:
             print(u"购票页面开始...")
 
@@ -292,7 +303,7 @@ class hackTickets(object):
             # 确认选座
             self.confirmSeat()
 
-            print(time.clock() - t)
+            print(time.process_time() - t)
 
         except Exception as e:
             print(e)
@@ -308,6 +319,13 @@ class hackTickets(object):
         self.login()
 
         # 登录成功，访问余票查询页面
+        self.driver.visit(self.ticket_url)
+
+        # 自动购买车票
+        self.buyTickets();
+
+    def reStart(self):
+         # 重新进入刷票页面
         self.driver.visit(self.ticket_url)
 
         # 自动购买车票
