@@ -206,12 +206,26 @@ class hackTickets(object):
                 count += 1
                 print(u"循环点击查询... 第 %s 次" % count) 
             except Exception as ee:
-                print(e)
+                print(ee)
                 print(u"点击查询出错")
                 continue
 
             try:
-                self.driver.find_by_text(u"预订")[self.order - 1].click()
+                table = self.driver.find_by_id('queryLeftTable')
+                # print(u"table:"+table.value)
+                # print(u"table_fist:"+table.first.value)
+                # print(u"table_last:"+table.last.value)
+                tr = table.find_by_tag('tr')
+                # for index in range(len(tr)):
+                #     print(u"tr:%s  :%s" % (tr[index].value,index))
+                # print(tr[2*self.order - 2].value)
+                td = tr[2*self.order - 2].find_by_tag('td')
+                # 0 车次-历时  1 
+                print(u"硬座是否有票： "+td[9].value)
+                print(u"硬卧是否有票： "+td[7].value)
+                print(u"预定按钮： "+td[12].value)
+                if (td[9].value == '有' or int(td[9].value) > 0):
+                    td[12].click()
                 sleep(0.3)
             except Exception as e:
                 print(e)
@@ -267,6 +281,7 @@ class hackTickets(object):
             if self.noseat_allow == 0:
                 self.driver.find_by_id('back_edit_id').click()
                 # 没有想要的席位，再次进入刷票页面
+                print(u"没有指定席位，发送邮件...")
                 self.reStart()
             elif self.noseat_allow == 1:
                 self.driver.find_by_id('qr_submit_id').click()
