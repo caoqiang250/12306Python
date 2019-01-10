@@ -84,6 +84,8 @@ class hackTickets(object):
         self.driver_name = cp.get("pathInfo", "driver_name")
         # 浏览器驱动（目前使用的是chromedriver）路径
         self.executable_path = cp.get("pathInfo", "executable_path")
+		
+		self.changes = 0;
 
     def loadConfig(self):
         parser = argparse.ArgumentParser()
@@ -205,6 +207,7 @@ class hackTickets(object):
                 self.driver.find_by_text(u"查询").click()
                 count += 1
                 print(u"循环点击查询... 第 %s 次" % count) 
+				print(u"失去 %s 次机会" % self.changes) 
             except Exception as ee:
                 print(ee)
                 print(u"点击查询出错")
@@ -275,6 +278,7 @@ class hackTickets(object):
         # 若提交订单异常，请适当加大sleep的时间
         sleep(1)
         print(u"确认选座...")
+		self.changes += 1;
         if self.driver.find_by_text(u"硬座余票<strong>0</strong>张") == None:
             self.driver.find_by_id('qr_submit_id').click()
         else:
