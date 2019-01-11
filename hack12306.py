@@ -84,8 +84,9 @@ class hackTickets(object):
         self.driver_name = cp.get("pathInfo", "driver_name")
         # 浏览器驱动（目前使用的是chromedriver）路径
         self.executable_path = cp.get("pathInfo", "executable_path")
-		
-		self.changes = 0;
+        self.changes = 0
+        # 定义一个上次进入购买页面时间
+        self.last_buy_time = int(time.time())
 
     def loadConfig(self):
         parser = argparse.ArgumentParser()
@@ -207,7 +208,7 @@ class hackTickets(object):
                 self.driver.find_by_text(u"查询").click()
                 count += 1
                 print(u"循环点击查询... 第 %s 次" % count) 
-				print(u"失去 %s 次机会" % self.changes) 
+                print(u"失去 %s 次机会" % self.changes) 
             except Exception as ee:
                 print(ee)
                 print(u"点击查询出错")
@@ -224,10 +225,13 @@ class hackTickets(object):
                 # print(tr[2*self.order - 2].value)
                 td = tr[2*self.order - 2].find_by_tag('td')
                 # 0 车次-历时  1 
-                print(u"硬座是否有票： "+td[9].value)
-                print(u"硬卧是否有票： "+td[7].value)
-                print(u"预定按钮： "+td[12].value)
-                if (td[9].value == '有' or int(td[9].value) > 0):
+                print(u"二等座剩余票数： "+td[3].value)
+                # print(u"硬卧是否有票： "+td[7].value)
+                # print(u"预定按钮： "+td[12].value)
+                # 每过10分钟进入一次付款界面，防止登录信息失效
+                print(u"剩余登录时间：%s " % (int(time.time()) - self.last_buy_time))
+                # 1商务 2一等 3二等 4高级 5软卧 6动卧 7硬卧 8软卧 9硬座 10无座 11其他 12预定
+                if (td[3].value == '有' or  (int(time.time()) - self.last_buy_time) >300 or int(td[3].value) > 0):
                     td[12].click()
                 sleep(0.3)
             except Exception as e:
@@ -258,7 +262,8 @@ class hackTickets(object):
                 continue
 
     def selUser(self):
-        print(u'开始选择用户...')
+        self.last_buy_time=int(time.time())
+        print(u'开始选择用户... 并充值last_buy_time')
         for user in self.users:
             self.driver.find_by_text(user).last.click()
 
@@ -271,26 +276,42 @@ class hackTickets(object):
 
     def submitOrder(self):
         print(u"提交订单...")
-        sleep(1)
-        self.driver.find_by_id('submitOrder_id').click()
+        while True:
+            try:
+                sleep(0.5)
+                self.driver.find_by_id('submitOrder_id').click()
+                break
+            except Exception as e:
+                print(e)
+                continue
 
     def confirmSeat(self):
         # 若提交订单异常，请适当加大sleep的时间
-        sleep(1)
-        print(u"确认选座...")
-		self.changes += 1;
-        if self.driver.find_by_text(u"硬座余票<strong>0</strong>张") == None:
-            self.driver.find_by_id('qr_submit_id').click()
-        else:
-            if self.noseat_allow == 0:
-                self.driver.find_by_id('back_edit_id').click()
-                # 没有想要的席位，再次进入刷票页面
-                print(u"没有指定席位，发送邮件...")
-                self.reStart()
-            elif self.noseat_allow == 1:
-                self.driver.find_by_id('qr_submit_id').click()
-                # 抢票成功，发送邮件提示
-                print(u"抢票成功，发送邮件...")
+        while True:
+            try:
+                sleep(0.5)
+                self.changes += 1;
+                # ele = self.driver.find_by_text(u"硬座余票<strong>0</strong>张")
+                ele_count = self.driver.find_by_id('sy_ticket_num_id').find_by_tag('strong')[0].value
+                print(u"确认选座... 剩余硬座余票 %s 张" %ele_count)
+                if int(ele_count) > 0:
+                    self.driver.find_by_id('qr_submit_id').click()
+                else:
+                    
+                    if self.noseat_allow == 0:
+                        self.driver.find_by_id('back_edit_id').click()
+                        # 没有想要的席位，再次进入刷票页面
+                        print(u"没有指定席位，发送邮件...")
+                        self.reStart()
+                    elif self.noseat_allow == 1:
+                        self.driver.find_by_id('qr_submit_id').click()
+                        # 抢票成功，发送邮件提示
+                        print(u"抢票成功，发送邮件...")
+                break
+            except Exception as e:
+                print(e)
+                continue
+        
 
     def buyTickets(self):
         t = time.process_time()
